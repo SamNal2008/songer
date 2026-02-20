@@ -1,14 +1,25 @@
-# Path-based labels for pull requests
 frontend:
-  - frontend/**/*
+  - frontend/**
+  
 backend:
-  - backend/**/*
+  - backend/**
+  
 model:
-  - model/**/*
+  - model/**
+  
 supabase:
-  - supabase/**/*
+  - supabase/**
+  
 ci:
-  - .github/**/*
+  - .github/**
+  
 docs:
   - "*.md"
-  - docs/**/*
+  - docs/**
+  
+dependencies:
+  - "package*.json"
+  - "requirements*.txt"
+  - "pyproject.toml"
+  - "poetry.lock"
+  - "Pipfile*"
