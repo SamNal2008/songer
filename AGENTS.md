@@ -150,7 +150,7 @@ pytest
 
 ## Agent Instructions
 
-Always use CLI to do something rather than writting file yourself
+Always use CLI to do something rather than writting file yourself : for boostraping the project, installing dependencies, check something in the code
 
 After receiving instructions, split tasks into smaller tasks and create a MD file with the list of tasks.
 Create a dependency tree of the task so multiple agents can run in parallele

@@ -1,189 +1,205 @@
-name: Issue to Agent
+name: Issue to Agent Routing
 
 on:
   issues:
     types: [labeled, closed]
 
 jobs:
-  handle-labels:
+  handle-codex:
+    if: github.event.label.name == 'codex'
     runs-on: ubuntu-latest
-    if: github.event.action == 'labeled'
-    
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
-      
-      - name: Handle Codex label
-        if: contains(github.event.label.name, 'codex')
+
+      - name: Assign to Codex
         uses: actions/github-script@v7
         with:
           script: |
-            // Post comment
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
+            const issue = context.payload.issue;
+            const title = issue.title.replace(/\s+/g, '-').toLowerCase().substring(0, 50);
+            const branchName = `feature/issue-${issue.number}-${title}`;
+
+            // Get the default branch SHA
+            const { data: repo } = await github.rest.repos.get({
               owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '🤖 Codex is picking up this task...'
+              repo: context.repo.repo
             });
-            
+
             // Create branch
-            const title = context.payload.issue.title;
-            const slug = title.toLowerCase()
-              .replace(/[^a-z0-9\s-]/g, '')
-              .replace(/\s+/g, '-')
-              .substring(0, 50);
-            
-            const branchName = `feature/issue-${context.issue.number}-${slug}`;
-            
             await github.rest.git.createRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
               ref: `refs/heads/${branchName}`,
-              sha: context.sha
+              sha: repo.default_branch === 'main' ? repo.commit.sha : repo.commit.sha
             });
-            
+
             // Add in-progress label
-            github.rest.issues.addLabels({
-              issue_number: context.issue.number,
+            await github.rest.issues.addLabels({
+              issue_number: issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               labels: ['in-progress']
             });
-      
-      - name: Handle Claude label
-        if: contains(github.event.label.name, 'claude')
+
+            // Post comment
+            await github.rest.issues.createComment({
+              issue_number: issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🤖 Codex is picking up this task...
+              
+              Branch created: \`${branchName}\`
+              
+              Codex will start working on this issue shortly.`
+            });
+
+  handle-claude:
+    if: github.event.label.name == 'claude'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Assign to Claude
         uses: actions/github-script@v7
         with:
           script: |
-            // Post comment
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
+            const issue = context.payload.issue;
+            const title = issue.title.replace(/\s+/g, '-').toLowerCase().substring(0, 50);
+            const branchName = `feature/issue-${issue.number}-${title}`;
+
+            // Get the default branch SHA
+            const { data: repo } = await github.rest.repos.get({
               owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '🧠 Claude Code is picking up this task...'
+              repo: context.repo.repo
             });
-            
+
             // Create branch
-            const title = context.payload.issue.title;
-            const slug = title.toLowerCase()
-              .replace(/[^a-z0-9\s-]/g, '')
-              .replace(/\s+/g, '-')
-              .substring(0, 50);
-            
-            const branchName = `feature/issue-${context.issue.number}-${slug}`;
-            
             await github.rest.git.createRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
               ref: `refs/heads/${branchName}`,
-              sha: context.sha
+              sha: repo.commit.sha
             });
-            
+
             // Add in-progress label
-            github.rest.issues.addLabels({
-              issue_number: context.issue.number,
+            await github.rest.issues.addLabels({
+              issue_number: issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               labels: ['in-progress']
             });
-      
-      - name: Handle feedback label
-        if: contains(github.event.label.name, 'feedback')
+
+            // Post comment
+            await github.rest.issues.createComment({
+              issue_number: issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🧠 Claude Code is picking up this task...
+              
+              Branch created: \`${branchName}\`
+              
+              Claude will start working on this issue shortly.`
+            });
+
+  handle-feedback:
+    if: github.event.label.name == 'feedback'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get related PRs and commits
         uses: actions/github-script@v7
         with:
           script: |
-            // Find PRs and commits referencing this issue
-            const prs = await github.rest.pulls.list({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'all',
-              sort: 'updated',
-              direction: 'desc'
+            const issue = context.payload.issue;
+
+            // Get PRs that reference this issue
+            const { data: prs } = await github.rest.search.issuesAndPullRequests({
+              q: `${issue.number} repo:${context.repo.owner}/${context.repo.repo} type:pr`
             });
-            
-            const referencingPRs = prs.data.filter(pr => 
-              pr.body.includes(`#${context.issue.number}`) ||
-              pr.title.includes(`#${context.issue.number}`)
-            );
-            
-            let comment = '## 📋 Related Activity\n\n';
-            
-            if (referencingPRs.length > 0) {
-              comment += '### Pull Requests:\n';
-              referencingPRs.forEach(pr => {
-                comment += `- PR #${pr.number}: ${pr.title} (${pr.state})\n`;
+
+            // Get commits that reference this issue
+            const { data: commits } = await github.rest.search.commits({
+              q: `${issue.number} repo:${context.repo.owner}/${context.repo.repo}`
+            });
+
+            let comment = `## 📝 Feedback Requested\n\n`;
+
+            if (prs.items.length > 0) {
+              comment += `### Related Pull Requests:\n`;
+              prs.items.forEach(pr => {
+                comment += `- #${pr.number} - ${pr.title}\n`;
               });
-            } else {
-              comment += 'No PRs or commits found referencing this issue.\n';
             }
-            
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
+
+            if (commits.items.length > 0) {
+              comment += `\n### Related Commits:\n`;
+              commits.items.slice(0, 5).forEach(commit => {
+                comment += `- ${commit.sha.substring(0, 7)} - ${commit.commit.message.split('\n')[0]}\n`;
+              });
+            }
+
+            if (prs.items.length === 0 && commits.items.length === 0) {
+              comment += `No PRs or commits found referencing this issue.`;
+            }
+
+            await github.rest.issues.createComment({
+              issue_number: issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: comment
             });
-            
+
             // Add needs-revision label
-            github.rest.issues.addLabels({
-              issue_number: context.issue.number,
+            await github.rest.issues.addLabels({
+              issue_number: issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               labels: ['needs-revision']
             });
-  
+
   handle-closed:
+    if: github.event.action == 'closed' && context.payload.issue.state_reason == 'completed'
     runs-on: ubuntu-latest
-    if: github.event.action == 'closed' && github.event.issue.state == 'closed'
-    
     steps:
-      - name: Check if closed by merged PR
-        id: check-pr
+      - name: Check for linked PR
         uses: actions/github-script@v7
         with:
           script: |
-            // Get linked PRs
-            const timeline = await github.rest.issues.listEventsForTimeline({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo
+            const issue = context.payload.issue;
+
+            // Get PRs that reference this issue
+            const { data: prs } = await github.rest.search.issuesAndPullRequests({
+              q: `${issue.number} repo:${context.repo.owner}/${context.repo.repo} type:pr is:merged`
             });
-            
-            const mergedEvent = timeline.data.find(event => 
-              event.event === 'cross-referenced' && 
-              event.source?.issue?.pull_request &&
-              event.source?.issue?.state === 'closed' &&
-              event.source?.issue?.merged_at
-            );
-            
-            if (mergedEvent) {
-              const prNumber = mergedEvent.source.issue.number;
-              console.log(`Found merged PR #${prNumber}`);
+
+            if (prs.items.length > 0) {
+              const pr = prs.items[0];
               
-              // Post comment
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
+              // Post shipped comment
+              await github.rest.issues.createComment({
+                issue_number: issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: `✅ Shipped in PR #${prNumber}`
+                body: `## ✅ Shipped in PR #${pr.number}
+                
+                ${pr.title}
+                
+                This issue has been automatically closed as the associated PR was merged.`
               });
               
               // Update labels
               await github.rest.issues.removeLabel({
-                issue_number: context.issue.number,
+                issue_number: issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 name: 'in-progress'
-              }).catch(() => {}); // Ignore if label doesn't exist
+              });
               
               await github.rest.issues.addLabels({
-                issue_number: context.issue.number,
+                issue_number: issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 labels: ['done']
               });
-              
-              return "shipped";
             }
-            
-            return "not-shipped";

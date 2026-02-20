@@ -1,47 +1,45 @@
 ---
-name: AI Task
-about: Create a task for AI agents (Codex/Claude)
-title: "[AI] "
-labels: ["ai-task"]
+name: 🤖 AI Task
+about: Task for AI agents (Codex/Claude)
+title: '[AI] '
+labels: ['ai-task']
 assignees: ''
+
 ---
 
-## Task Description
+## 📋 Task Description
 Provide a detailed description of what the AI agent should do. Be as specific as possible - the agent will read this verbatim.
 
-## Service(s) Involved
-Which service(s) will this task modify?
-- [ ] frontend
-- [ ] backend
-- [ ] model
-- [ ] supabase
-- [ ] all
+## 🎯 Service(s) Involved
+- [ ] Frontend
+- [ ] Backend
+- [ ] Model
+- [ ] Supabase
+- [ ] Multiple services
 
-## Files or Modules Likely Involved
-List the specific files or modules you expect the agent to work on:
+## 📁 Files or Modules Likely Involved
+List the specific files, directories, or modules that the agent should work on:
 - 
 - 
 - 
 
-## Acceptance Criteria
-List specific, testable conditions that must be met:
-- [ ] Test passes for new functionality
-- [ ] Code follows project conventions
-- [ ] Documentation is updated
-- [ ] No breaking changes
+## ✅ Acceptance Criteria
+Must be testable and verifiable:
+- [ ] Test 1
+- [ ] Test 2
+- [ ] Test 3
 
-## Constraints
-What should the AI agent NOT do?
-- Do not modify the auth flow
-- Do not change database schema without migration
-- Do not remove existing functionality
-- [Add your specific constraints here]
+## 🚫 Constraints
+What the agent should NOT do:
+- Do not modify the authentication flow
+- Do not change the database schema
+- Other constraints:
 
-## Supabase Impact
-Does this task require a new database migration?
+## 🗄️ Supabase Impact
+Does this task require a new migration?
 - [ ] Yes
 - [ ] No
-- [ ] Maybe (will determine during implementation)
+- [ ] Maybe (agent should assess)
 
-## Additional Context
-Add any other relevant information, examples, or references.
+## 📝 Additional Notes
+Any additional context, requirements, or helpful information for the AI agent.
