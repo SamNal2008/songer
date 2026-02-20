@@ -1,0 +1,14 @@
+# Path-based labels for pull requests
+frontend:
+  - frontend/**/*
+backend:
+  - backend/**/*
+model:
+  - model/**/*
+supabase:
+  - supabase/**/*
+ci:
+  - .github/**/*
+docs:
+  - "*.md"
+  - docs/**/*

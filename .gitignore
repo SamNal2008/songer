@@ -137,3 +137,9 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Songer
+hum_db.json
+.venv/
+__pycache__/
+*.pyc
