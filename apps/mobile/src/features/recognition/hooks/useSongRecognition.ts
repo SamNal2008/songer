@@ -1,6 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
 
-import { shazamRecognitionService } from '../services/shazamRecognitionService';
+import {
+  musicRecognition,
+  musicRecognitionUnsupportedMessage,
+  type MusicRecognitionResult,
+} from '../../../services/musicRecognition';
 import type { RecognitionState, RecognizedSong } from '../types';
 
 const INITIAL_STATE: RecognitionState = {
@@ -10,11 +14,57 @@ const INITIAL_STATE: RecognitionState = {
   errorMessage: null,
 };
 
+const MAX_RECENT_MATCHES = 10;
+
+function toRecognizedSong(song: MusicRecognitionResult): RecognizedSong {
+  const id =
+    song.providerMatchId ?? `${song.artist}-${song.title}`.toLowerCase().replace(/\s+/g, '-');
+
+  return {
+    id,
+    title: song.title,
+    artist: song.artist,
+    artworkUrl: song.artworkUrl,
+  };
+}
+
+function mergeRecentMatches(recentMatches: RecognizedSong[], latestMatch: RecognizedSong) {
+  const seen = new Set<string>();
+  const deduped: RecognizedSong[] = [];
+
+  for (const song of [latestMatch, ...recentMatches]) {
+    if (seen.has(song.id)) {
+      continue;
+    }
+
+    seen.add(song.id);
+    deduped.push(song);
+
+    if (deduped.length === MAX_RECENT_MATCHES) {
+      break;
+    }
+  }
+
+  return deduped;
+}
+
 export function useSongRecognition() {
   const [state, setState] = useState<RecognitionState>(INITIAL_STATE);
-  const [youtubeQuery, setYoutubeQuery] = useState<string | null>(null);
+  const [youtubeSong, setYoutubeSong] = useState<{ artist: string; title: string } | null>(null);
+
+  const isSupported = musicRecognition.isSupported();
 
   const identifySong = useCallback(async () => {
+    if (!musicRecognition.isSupported()) {
+      setState((previousState) => ({
+        ...previousState,
+        status: 'error',
+        currentMatch: null,
+        errorMessage: musicRecognitionUnsupportedMessage,
+      }));
+      return;
+    }
+
     setState((previousState) => ({
       ...previousState,
       status: 'listening',
@@ -23,7 +73,7 @@ export function useSongRecognition() {
     }));
 
     try {
-      const match = await shazamRecognitionService.identifySong();
+      const match = await musicRecognition.recognize();
 
       if (!match) {
         setState((previousState) => ({
@@ -35,10 +85,13 @@ export function useSongRecognition() {
         return;
       }
 
+      const recognizedSong = toRecognizedSong(match);
+
       setState((previousState) => ({
         status: 'match-found',
-        currentMatch: match,
-        recentMatches: shazamRecognitionService.mergeRecentMatches(previousState.recentMatches, match),
+        currentMatch: recognizedSong,
+        // Recognition results are intentionally ephemeral and live in React state only.
+        recentMatches: mergeRecentMatches(previousState.recentMatches, recognizedSong),
         errorMessage: null,
       }));
     } catch (error) {
@@ -54,15 +107,15 @@ export function useSongRecognition() {
   }, []);
 
   const playOnYouTube = useCallback((song: RecognizedSong) => {
-    setYoutubeQuery(`${song.artist} - ${song.title}`);
+    setYoutubeSong({ artist: song.artist, title: song.title });
   }, []);
 
   const closeYouTubeModal = useCallback(() => {
-    setYoutubeQuery(null);
+    setYoutubeSong(null);
   }, []);
 
   const stopListening = useCallback(() => {
-    shazamRecognitionService.stopListening();
+    musicRecognition.stopListening();
 
     setState((previousState) => ({
       ...previousState,
@@ -81,7 +134,7 @@ export function useSongRecognition() {
       case 'match-found':
         return 'Match found. Tap below to open YouTube search results.';
       case 'no-match':
-        return 'No match found this time. Try again in a quieter environment.';
+        return 'No match this time. Try again in a quieter environment or get closer to the speaker.';
       case 'error':
         return state.errorMessage ?? 'Something went wrong while identifying the song.';
       default:
@@ -92,11 +145,14 @@ export function useSongRecognition() {
   return {
     ...state,
     isRecognizing,
+    isSupported,
+    unsupportedMessage: musicRecognitionUnsupportedMessage,
     statusMessage,
     identifySong,
     playOnYouTube,
     stopListening,
-    youtubeQuery,
+    youtubeSong,
+    isYoutubeModalVisible: youtubeSong !== null,
     closeYouTubeModal,
   };
 }

@@ -1,11 +1,11 @@
 import { useRouter } from 'expo-router';
 import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { YoutubePlayerModal } from '../src/components/YoutubePlayerModal';
 import { AppButton } from '../src/Shared/components/atoms/AppButton';
 import { RecentResultsList } from '../src/features/recognition/components/RecentResultsList';
 import { RecognitionStatusMessage } from '../src/features/recognition/components/RecognitionStatusMessage';
 import { SongMatchCard } from '../src/features/recognition/components/SongMatchCard';
-import { YouTubeModal } from '../src/features/recognition/components/YouTubeModal';
 import { useSongRecognition } from '../src/features/recognition/hooks/useSongRecognition';
 
 export default function HomeScreen() {
@@ -17,11 +17,16 @@ export default function HomeScreen() {
     statusMessage,
     identifySong,
     isRecognizing,
+    isSupported,
+    unsupportedMessage,
     playOnYouTube,
     stopListening,
-    youtubeQuery,
+    youtubeSong,
+    isYoutubeModalVisible,
     closeYouTubeModal,
   } = useSongRecognition();
+
+  const canIdentifySong = isSupported && !isRecognizing;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -31,16 +36,21 @@ export default function HomeScreen() {
           <Text style={styles.subtitle}>Identify songs around you instantly.</Text>
         </View>
 
+        {!isSupported ? <Text style={styles.helperText}>{unsupportedMessage}</Text> : null}
+
         <View style={styles.actions}>
           <AppButton
             label={isRecognizing ? 'Listening...' : 'Identify song'}
             onPress={identifySong}
             isLoading={isRecognizing}
-            disabled={isRecognizing}
+            disabled={!canIdentifySong}
           />
           <AppButton label="Settings" variant="secondary" onPress={() => router.push('/settings')} />
           {isRecognizing ? (
             <AppButton label="Stop listening" variant="secondary" onPress={stopListening} />
+          ) : null}
+          {(status === 'no-match' || status === 'error') && isSupported ? (
+            <AppButton label="Try again" variant="secondary" onPress={identifySong} />
           ) : null}
         </View>
 
@@ -53,7 +63,11 @@ export default function HomeScreen() {
         <RecentResultsList songs={recentMatches} />
       </ScrollView>
 
-      <YouTubeModal query={youtubeQuery} onClose={closeYouTubeModal} />
+      <YoutubePlayerModal
+        song={youtubeSong}
+        visible={isYoutubeModalVisible}
+        onClose={closeYouTubeModal}
+      />
     </SafeAreaView>
   );
 }
@@ -79,6 +93,15 @@ const styles = StyleSheet.create({
   subtitle: {
     color: '#4B5563',
     fontSize: 16,
+  },
+  helperText: {
+    backgroundColor: '#E0E7FF',
+    borderRadius: 12,
+    color: '#312E81',
+    fontSize: 13,
+    lineHeight: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   actions: {
     gap: 10,
