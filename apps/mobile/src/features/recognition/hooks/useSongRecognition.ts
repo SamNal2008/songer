@@ -17,7 +17,8 @@ const INITIAL_STATE: RecognitionState = {
 const MAX_RECENT_MATCHES = 10;
 
 function toRecognizedSong(song: MusicRecognitionResult): RecognizedSong {
-  const id = `${song.artist}-${song.title}`.toLowerCase().replace(/\s+/g, '-');
+  const id =
+    song.providerMatchId ?? `${song.artist}-${song.title}`.toLowerCase().replace(/\s+/g, '-');
 
   return {
     id,
