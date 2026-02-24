@@ -1,0 +1,15 @@
+{
+  "name": "songer",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.18.1",
+  "scripts": {
+    "dev:mobile": "pnpm --filter mobile start",
+    "lint": "pnpm --filter mobile lint",
+    "typecheck": "pnpm --filter mobile typecheck",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2"
+  }
+}

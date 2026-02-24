@@ -1,0 +1,45 @@
+name: eas-production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish-production-update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Skip when EXPO_TOKEN is not configured
+        if: ${{ secrets.EXPO_TOKEN == '' }}
+        run: echo "EXPO_TOKEN is missing. Skipping production EAS Update publish."
+
+      - name: Checkout repository
+        if: ${{ secrets.EXPO_TOKEN != '' }}
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        if: ${{ secrets.EXPO_TOKEN != '' }}
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        if: ${{ secrets.EXPO_TOKEN != '' }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        if: ${{ secrets.EXPO_TOKEN != '' }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup Expo and EAS
+        if: ${{ secrets.EXPO_TOKEN != '' }}
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Publish production update
+        if: ${{ secrets.EXPO_TOKEN != '' }}
+        run: pnpm --filter mobile exec eas update --channel production --auto --non-interactive
