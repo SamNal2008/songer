@@ -156,10 +156,12 @@ A task is considered complete when:
 - Implementation is finished.
 - Test are written and pass.
 - Changes are committed.
+- Local build is green and app has been tested through Playwright MCP on Web version at least
 - PR is opened or updated.
 - CI passes (lint/build).
 - If deploy-related:
   - EAS Update or Build artifact produced.
+  
 
 ---
 

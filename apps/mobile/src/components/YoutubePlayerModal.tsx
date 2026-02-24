@@ -1,18 +1,20 @@
 import { Modal, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 
-type YouTubeModalProps = {
-  query: string | null;
+type YoutubePlayerModalProps = {
+  song: {
+    artist: string;
+    title: string;
+  } | null;
+  visible: boolean;
   onClose: () => void;
 };
 
-function getYouTubeSearchUrl(query: string) {
-  return `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+function getYoutubeSearchUrl(song: { artist: string; title: string }) {
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(`${song.artist}-${song.title}`)}`;
 }
 
-export function YouTubeModal({ query, onClose }: YouTubeModalProps) {
-  const visible = Boolean(query);
-
+export function YoutubePlayerModal({ song, visible, onClose }: YoutubePlayerModalProps) {
   return (
     <Modal animationType="slide" visible={visible} onRequestClose={onClose}>
       <SafeAreaView style={styles.container}>
@@ -23,9 +25,9 @@ export function YouTubeModal({ query, onClose }: YouTubeModalProps) {
           </Pressable>
         </View>
 
-        {query ? (
+        {song ? (
           <WebView
-            source={{ uri: getYouTubeSearchUrl(query) }}
+            source={{ uri: getYoutubeSearchUrl(song) }}
             style={styles.webview}
             startInLoadingState
           />
