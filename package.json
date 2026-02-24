@@ -7,7 +7,9 @@
     "dev:mobile": "pnpm --filter mobile start",
     "lint": "pnpm --filter mobile lint",
     "typecheck": "pnpm --filter mobile typecheck",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "build:android:preview": "pnpm --filter mobile exec eas build --platform android --profile preview",
+    "build:android:production": "pnpm --filter mobile exec eas build --platform android --profile production"
   },
   "devDependencies": {
     "prettier": "^3.6.2"

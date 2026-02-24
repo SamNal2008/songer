@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "Improved Shazam",
-    "slug": "improved-shazam",
+    "name": "Songer",
+    "slug": "songer",
     "version": "0.1.0",
-    "scheme": "improvedshazam",
+    "scheme": "songer",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -24,6 +24,7 @@
       "supportsTablet": false
     },
     "android": {
+      "package": "com.samynalban.songer",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -39,7 +40,7 @@
       [
         "expo-shazamkit",
         {
-          "microphonePermission": "Allow Improved Shazam to access your microphone for song recognition."
+          "microphonePermission": "Allow Songer to access your microphone for song recognition."
         }
       ],
       [

@@ -14,6 +14,8 @@
     "eslint-config-expo": "~10.0.0",
     "expo": "~54.0.33",
     "expo-build-properties": "~1.0.10",
+    "expo-constants": "~18.0.13",
+    "expo-linking": "~8.0.11",
     "expo-router": "~6.0.23",
     "expo-shazamkit": "^1.0.0",
     "expo-status-bar": "~3.0.9",
@@ -29,6 +31,20 @@
   "devDependencies": {
     "@types/react": "~19.1.0",
     "typescript": "~5.9.2"
+  },
+  "expo": {
+    "install": {
+      "exclude": [
+        "expo-shazamkit"
+      ]
+    },
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "exclude": [
+          "expo-shazamkit"
+        ]
+      }
+    }
   },
   "private": true
 }
