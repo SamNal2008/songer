@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "f0a27b3a-74bc-42bf-929a-eb3824d1bdb5"
+      }
+    },
+    "android": {
+      "package": "com.samynalban.songer"
+    },
+    "ios": {
+      "bundleIdentifier": "com.samynalban.songer",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    }
+  }
+}
