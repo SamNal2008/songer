@@ -1,0 +1,115 @@
+name: maestro-ios-e2e
+
+on:
+  pull_request:
+
+jobs:
+  maestro-ios:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Maestro CLI
+        run: |
+          curl -fsSL "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+          "$HOME/.maestro/bin/maestro" --version
+
+      - name: Boot iOS simulator (headless)
+        run: |
+          set -euo pipefail
+
+          UDID="$(xcrun simctl list devices available -j | node -e 'const fs=require("fs"); const data=JSON.parse(fs.readFileSync(0, "utf8")); for (const runtimeDevices of Object.values(data.devices)) { for (const device of runtimeDevices) { if (device.isAvailable && device.name.startsWith("iPhone")) { process.stdout.write(device.udid); process.exit(0); } } } process.exit(1);')"
+          if [[ -z "$UDID" ]]; then
+            echo "No available iPhone simulator found"
+            exit 1
+          fi
+
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          echo "IOS_SIMULATOR_UDID=$UDID" >> "$GITHUB_ENV"
+
+      - name: Prebuild iOS native project
+        run: pnpm --filter mobile exec expo prebuild --platform ios --non-interactive
+
+      - name: Build app for iOS simulator
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/maestro
+
+          XCODE_WORKSPACE="$(find apps/mobile/ios -maxdepth 1 -name "*.xcworkspace" | head -n 1)"
+          if [[ -z "$XCODE_WORKSPACE" ]]; then
+            echo "Could not find an iOS workspace under apps/mobile/ios"
+            exit 1
+          fi
+
+          XCODE_SCHEME="$(xcodebuild -list -workspace "$XCODE_WORKSPACE" -json | node -e 'const fs=require("fs"); const data=JSON.parse(fs.readFileSync(0, "utf8")); const schemes=data.workspace?.schemes ?? []; if (!schemes.length) process.exit(1); process.stdout.write(schemes[0]);')"
+          if [[ -z "$XCODE_SCHEME" ]]; then
+            echo "Could not resolve an Xcode scheme"
+            exit 1
+          fi
+
+          xcodebuild \
+            -workspace "$XCODE_WORKSPACE" \
+            -scheme "$XCODE_SCHEME" \
+            -configuration Debug \
+            -destination "id=$IOS_SIMULATOR_UDID" \
+            -derivedDataPath /tmp/maestro-derived \
+            build 2>&1 | tee artifacts/maestro/xcodebuild.log
+
+      - name: Install app on simulator
+        run: |
+          set -euo pipefail
+
+          APP_PATH="$(find /tmp/maestro-derived/Build/Products/Debug-iphonesimulator -maxdepth 1 -type d -name "*.app" | head -n 1)"
+          if [[ -z "$APP_PATH" ]]; then
+            echo "Could not find built .app output"
+            exit 1
+          fi
+
+          xcrun simctl install "$IOS_SIMULATOR_UDID" "$APP_PATH"
+
+      - name: Run Maestro smoke flow
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/maestro
+          maestro --device "$IOS_SIMULATOR_UDID" test apps/mobile/.maestro/smoke.yaml 2>&1 | tee artifacts/maestro/maestro.log
+
+      - name: Capture simulator diagnostics on failure
+        if: failure()
+        run: |
+          mkdir -p artifacts/maestro
+          xcrun simctl list devices > artifacts/maestro/simctl-devices.txt
+          xcrun simctl diagnose "$IOS_SIMULATOR_UDID" > artifacts/maestro/simctl-diagnose.txt || true
+
+      - name: Upload Maestro artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-ios-logs
+          path: artifacts/maestro
+          if-no-files-found: ignore
+          retention-days: 7

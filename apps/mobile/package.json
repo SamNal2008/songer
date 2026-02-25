@@ -8,7 +8,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "e2e:maestro": "maestro test .maestro/smoke.yaml"
   },
   "dependencies": {
     "eslint-config-expo": "~10.0.0",

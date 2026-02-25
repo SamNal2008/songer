@@ -1,0 +1,8 @@
+appId: com.samynalban.songer
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Improved Shazam"
+- tapOn: "Continue"
+- assertVisible: "Identify song"
+- assertVisible: "Identify songs around you instantly."
