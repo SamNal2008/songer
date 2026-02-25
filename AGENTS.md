@@ -133,7 +133,7 @@ ALWAYS :
 
 ## 6. Agent Operating Rules
 
-All agents (Codex or others) must:
+Codex must:
 
 1. Never commit secrets.
 2. Prefer official Expo/EAS/Supabase tooling.
@@ -147,20 +147,30 @@ All agents (Codex or others) must:
    - PR opened
    - CI green
 
+### 6.1 Codex skills installation (Codex-only)
+
+- Install and maintain skills only under the `codex/` directory.
+- Do not create or use `.claude/` for skills, prompts, or configuration.
+- Keep Codex prompt/skill assets versioned inside `codex/` so they are reusable by Codex CLI and Codex Cloud workflows.
+
 ---
 
 ## 7. Definition of Done (Per Task)
 
-A task is considered complete when:
+### 7.1 A task is considered complete when:
 
 - Implementation is finished.
 - Test are written and pass.
 - Changes are committed.
-- Local build is green and app has been tested through Playwright MCP on Web version at least
+- Local build is green and mobile flows are validated through Mobile MCP on the target simulator/emulator/device when relevant.
 - PR is opened or updated.
 - CI passes (lint/build).
 - If deploy-related:
   - EAS Update or Build artifact produced.
+
+### 7.2 Definition of Done on tech quality point of view
+
+- Never keep deprecated components
   
 
 ---
